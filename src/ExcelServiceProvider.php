@@ -49,8 +49,8 @@ class ExcelServiceProvider extends ServiceProvider
         $this->app->alias('excel', Excel::class);
         $this->app->alias('excel', Exporter::class);
 
-        Collection::mixin(new DownloadCollection);
-        Collection::mixin(new StoreCollection);
+        static::mixin(new DownloadCollection);
+        static::mixin(new StoreCollection);
     }
 
     /**
@@ -59,5 +59,25 @@ class ExcelServiceProvider extends ServiceProvider
     protected function getConfigFile(): string
     {
         return __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'excel.php';
+    }
+
+    /**
+     * Mix another object into the class.
+     *
+     * @param object $mixin
+     * @return void
+     * @throws \ReflectionException
+     */
+    public static function mixin($mixin)
+    {
+        $methods = (new \ReflectionClass($mixin))->getMethods(
+            \ReflectionMethod::IS_PUBLIC | \ReflectionMethod::IS_PROTECTED
+        );
+
+        foreach ($methods as $method) {
+            $method->setAccessible(true);
+
+            Collection::macro($method->name, $method->invoke($mixin));
+        }
     }
 }
